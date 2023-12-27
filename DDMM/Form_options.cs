@@ -73,6 +73,7 @@ namespace DDMM
         private Timer UnclipTimer;  // removes clipping after N milliseconds on screen border
         private Timer ReclipTimer;  // sets clipping again after N milliseconds of letting the cursor cross border
         private Timer PreviewTimer; // updates preview screens when moved, delayed to allow less overhead on system changes
+        private Timer ResetWiggleTimer; // resets wiggles
 
         # endregion
 
@@ -118,6 +119,10 @@ namespace DDMM
             PreviewTimer = new Timer();  // timer to move preview screens back to their locations
             PreviewTimer.Interval = 1000; // 1 sec delay allowed to prevent system overhead
             PreviewTimer.Tick += new EventHandler(PreviewRestoreAfterTimer);
+
+            ResetWiggleTimer = new Timer();
+            ResetWiggleTimer.Interval = 1000;
+            ResetWiggleTimer.Tick += new EventHandler(ResetWiggle);
 
             #endregion
 
@@ -200,6 +205,13 @@ namespace DDMM
         {
             CanClip = true;               // we dont reactivate clipping, we just flag clipping as allowed
             ReclipTimer.Stop();           // stop this timer
+        }
+
+        private void ResetWiggle(object sender, EventArgs eArgs) // ends cursor releasing period
+        {
+            wiggleCounterHorz.Reset();
+            wiggleCounterVert.Reset();
+            ResetWiggleTimer.Stop();
         }
 
         #endregion
@@ -580,6 +592,7 @@ namespace DDMM
             { 
                 Wiggle_NeededCount = Convert.ToInt32(tb_numwiggles.Text);
                 tb_numwiggles.BackColor = tb_color_ok;
+                ResetWiggleTimer.Interval = 250 * (Wiggle_NeededCount + 1);
             } 
             catch (Exception) 
             { 
@@ -796,21 +809,32 @@ namespace DDMM
 
         private void MouseMoved(int X, int Y) // called by mouse hook to handle mouse movements
         {
-            int vertBorderDistance = Math.Min(Math.Abs(CurrentClipRect.Left - X), Math.Abs(CurrentClipRect.Right - X - 1));
-            int horzBorderDistance = Math.Min(Math.Abs(CurrentClipRect.Top - Y), Math.Abs(CurrentClipRect.Bottom - Y - 1));
+            int vertBorderDistance = Math.Min(X - CurrentClipRect.Left, CurrentClipRect.Right - X - 1);
+            int horzBorderDistance = Math.Min(Y - CurrentClipRect.Top, CurrentClipRect.Bottom - Y - 1);
             int maxBorderDistance = 30;
 
-            if (vertBorderDistance <= maxBorderDistance)
-                wiggleCounterVert.RegisterPosition(Y);
-            else
+            if (vertBorderDistance < 0 || horzBorderDistance < 0)
+            {
+                // Mouse moved to anther screen
                 wiggleCounterVert.Reset();
-
-            if (horzBorderDistance <= maxBorderDistance)
-                wiggleCounterHorz.RegisterPosition(X);
-            else
                 wiggleCounterHorz.Reset();
+            }
+            else
+            {
+                if (vertBorderDistance <= maxBorderDistance)
+                    wiggleCounterVert.RegisterPosition(Y);
+                else
+                    wiggleCounterVert.Reset();
+
+                if (horzBorderDistance <= maxBorderDistance)
+                    wiggleCounterHorz.RegisterPosition(X);
+                else
+                    wiggleCounterHorz.Reset();
+            }
 
             int wiggleCount = Math.Max(wiggleCounterVert.Count(), wiggleCounterHorz.Count());
+            if (wiggleCount > 0 && !ResetWiggleTimer.Enabled)
+                ResetWiggleTimer.Start();
 
             // Should modify the following line to happen only on visible form, reducing CPU usage
             if (UsePreview)
@@ -836,6 +860,8 @@ namespace DDMM
                                 ActiveClip = true;              // flag clipping as active
                                 notifyIcon1.Icon = new Icon(GetType(), "ddmm_screen" + ((i == 1) ? "1" : "2") + ".ico"); // change icon (2 icons for different screens)
                                 CanClip = false;                // no need to allow new clipping
+                                wiggleCounterHorz.Reset();
+                                wiggleCounterVert.Reset();
                                 break;                          // skip other screens
                             }
                         }
