@@ -63,6 +63,9 @@ namespace DDMM
             this.cb_startwithwindows = new System.Windows.Forms.CheckBox();
             this.cb_activate = new System.Windows.Forms.CheckBox();
             this.gb_method = new System.Windows.Forms.GroupBox();
+            this.l_mouse_wiggles = new System.Windows.Forms.Label();
+            this.tb_numwiggles = new System.Windows.Forms.TextBox();
+            this.cb_allowcrossingwiggles = new System.Windows.Forms.CheckBox();
             this.label1 = new System.Windows.Forms.Label();
             this.l_ms = new System.Windows.Forms.Label();
             this.tb_unclipdelay = new System.Windows.Forms.TextBox();
@@ -112,7 +115,7 @@ namespace DDMM
             this.gb_screenboundaries.Controls.Add(this.tb_s1right);
             this.gb_screenboundaries.Controls.Add(this.tb_s1left);
             this.gb_screenboundaries.Controls.Add(this.l_screen1);
-            this.gb_screenboundaries.Location = new System.Drawing.Point(278, 12);
+            this.gb_screenboundaries.Location = new System.Drawing.Point(308, 12);
             this.gb_screenboundaries.Name = "gb_screenboundaries";
             this.gb_screenboundaries.Size = new System.Drawing.Size(260, 206);
             this.gb_screenboundaries.TabIndex = 1;
@@ -353,7 +356,7 @@ namespace DDMM
             this.gb_general.Controls.Add(this.cb_activate);
             this.gb_general.Location = new System.Drawing.Point(12, 12);
             this.gb_general.Name = "gb_general";
-            this.gb_general.Size = new System.Drawing.Size(260, 142);
+            this.gb_general.Size = new System.Drawing.Size(290, 142);
             this.gb_general.TabIndex = 2;
             this.gb_general.TabStop = false;
             this.gb_general.Text = "General";
@@ -404,6 +407,9 @@ namespace DDMM
             // 
             // gb_method
             // 
+            this.gb_method.Controls.Add(this.l_mouse_wiggles);
+            this.gb_method.Controls.Add(this.tb_numwiggles);
+            this.gb_method.Controls.Add(this.cb_allowcrossingwiggles);
             this.gb_method.Controls.Add(this.label1);
             this.gb_method.Controls.Add(this.l_ms);
             this.gb_method.Controls.Add(this.tb_unclipdelay);
@@ -411,19 +417,47 @@ namespace DDMM
             this.gb_method.Controls.Add(this.cb_allowcrossingctrlkey);
             this.gb_method.Location = new System.Drawing.Point(12, 160);
             this.gb_method.Name = "gb_method";
-            this.gb_method.Size = new System.Drawing.Size(260, 128);
+            this.gb_method.Size = new System.Drawing.Size(290, 128);
             this.gb_method.TabIndex = 3;
             this.gb_method.TabStop = false;
             this.gb_method.Text = "Method";
             // 
+            // l_mouse_wiggles
+            // 
+            this.l_mouse_wiggles.AutoSize = true;
+            this.l_mouse_wiggles.Location = new System.Drawing.Point(199, 77);
+            this.l_mouse_wiggles.Name = "l_mouse_wiggles";
+            this.l_mouse_wiggles.Size = new System.Drawing.Size(76, 13);
+            this.l_mouse_wiggles.TabIndex = 33;
+            this.l_mouse_wiggles.Text = "mouse wiggles";
+            // 
+            // tb_numwiggles
+            // 
+            this.tb_numwiggles.Location = new System.Drawing.Point(157, 74);
+            this.tb_numwiggles.Name = "tb_numwiggles";
+            this.tb_numwiggles.Size = new System.Drawing.Size(36, 20);
+            this.tb_numwiggles.TabIndex = 32;
+            this.tb_numwiggles.TextChanged += new System.EventHandler(this.OptionsChanged);
+            // 
+            // cb_allowcrossingwiggles
+            // 
+            this.cb_allowcrossingwiggles.AutoSize = true;
+            this.cb_allowcrossingwiggles.Location = new System.Drawing.Point(12, 77);
+            this.cb_allowcrossingwiggles.Name = "cb_allowcrossingwiggles";
+            this.cb_allowcrossingwiggles.Size = new System.Drawing.Size(153, 17);
+            this.cb_allowcrossingwiggles.TabIndex = 31;
+            this.cb_allowcrossingwiggles.Text = "Allow border crossing after ";
+            this.cb_allowcrossingwiggles.UseVisualStyleBackColor = true;
+            this.cb_allowcrossingwiggles.CheckedChanged += new System.EventHandler(this.OptionsChanged);
+            // 
             // label1
             // 
             this.label1.AutoSize = true;
-            this.label1.Location = new System.Drawing.Point(11, 77);
+            this.label1.Location = new System.Drawing.Point(9, 99);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(248, 13);
+            this.label1.Size = new System.Drawing.Size(237, 13);
             this.label1.TabIndex = 30;
-            this.label1.Text = "( if you uncheck both and get stuck, hit Ctrl+Alt+D )";
+            this.label1.Text = "( if you uncheck all and get stuck, hit Ctrl+Alt+D )";
             // 
             // l_ms
             // 
@@ -526,7 +560,7 @@ namespace DDMM
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.cb_mousejump);
-            this.groupBox1.Location = new System.Drawing.Point(279, 224);
+            this.groupBox1.Location = new System.Drawing.Point(309, 224);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(260, 64);
             this.groupBox1.TabIndex = 3;
@@ -558,7 +592,7 @@ namespace DDMM
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(551, 325);
+            this.ClientSize = new System.Drawing.Size(580, 325);
             this.Controls.Add(this.gb_general);
             this.Controls.Add(this.gb_method);
             this.Controls.Add(this.bt_save);
@@ -575,11 +609,11 @@ namespace DDMM
             this.ShowInTaskbar = false;
             this.Text = "Dual Display Mouse Manager v1.1";
             this.WindowState = System.Windows.Forms.FormWindowState.Minimized;
+            this.Activated += new System.EventHandler(this.DDMM_Form_Activated);
             this.Deactivate += new System.EventHandler(this.DDMM_Form_Deactivate);
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DDMM_Form_FormClosing);
             this.Load += new System.EventHandler(this.DDMM_Form_Load);
             this.Shown += new System.EventHandler(this.DDMM_Form_Shown);
-            this.Activated += new System.EventHandler(this.DDMM_Form_Activated);
-            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DDMM_Form_FormClosing);
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.DDMM_Form_KeyDown);
             this.gb_screenboundaries.ResumeLayout(false);
             this.gb_screenboundaries.PerformLayout();
@@ -644,6 +678,9 @@ namespace DDMM
         private System.Windows.Forms.CheckBox cb_autobounds;
         private System.Windows.Forms.CheckBox cb_preview;
         private System.Windows.Forms.Label l_debug;
+        private System.Windows.Forms.CheckBox cb_allowcrossingwiggles;
+        private System.Windows.Forms.Label l_mouse_wiggles;
+        private System.Windows.Forms.TextBox tb_numwiggles;
     }
 }
 

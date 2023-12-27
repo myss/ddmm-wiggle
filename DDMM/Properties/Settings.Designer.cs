@@ -242,6 +242,30 @@ namespace DDMM.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool Method_Wiggle {
+            get {
+                return ((bool)(this["Method_Wiggle"]));
+            }
+            set {
+                this["Method_Wiggle"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("3")]
+        public string Wiggle_Count {
+            get {
+                return ((string)(this["Wiggle_Count"]));
+            }
+            set {
+                this["Wiggle_Count"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool Window_Minimized {
             get {
                 return ((bool)(this["Window_Minimized"]));

@@ -56,6 +56,12 @@
     <Setting Name="Delay_UnClip" Type="System.String" Scope="User">
       <Value Profile="(Default)">150</Value>
     </Setting>
+    <Setting Name="Method_Wiggle" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="Wiggle_Count" Type="System.String" Scope="User">
+      <Value Profile="(Default)">3</Value>
+    </Setting>
     <Setting Name="Window_Minimized" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>

@@ -54,6 +54,11 @@ namespace DDMM
         private bool Method_Delay;                   // do we use "release cursor after delay" feature
         private bool Method_CtrlKey;                 // do we use "release cursor on ctrl key" feature
         private int  UnClipDelay;                    // cursor release delay
+
+        private WiggleCounter wiggleCounter = new WiggleCounter();
+        private bool Method_Wiggles;                 // do we use "release cursor on mouse wiggles" feature
+        private int Wiggle_NeededCount = 0;
+
         private bool UseMouseJump;                   // do we use "mouse teleport" feature on pressing Ctrl + ~
 
         private const string StartWithWindowsRegPath // path to registry entry for automatic startup
@@ -176,7 +181,7 @@ namespace DDMM
         {
             // Needs to be substituted with external DLL w/ global hook
             if (ActivateProgram && ActiveClip)
-                    ClipCursor(ref DummyClipRect);
+                ClipCursor(ref DummyClipRect);
             if (UsePreview)
                 DrawOnTaskBar(); // also make sure screens previews can draw on top of taskbar (must be done periodically too, since taskbar must be brought to front when switching between apps)
         }
@@ -436,6 +441,9 @@ namespace DDMM
             cb_mousejump.Checked             = Properties.Settings.Default.UseMouseJump;
             cb_preview.Checked               = Properties.Settings.Default.UsePreview;
 
+            tb_numwiggles.Text               = Properties.Settings.Default.Wiggle_Count;
+            cb_allowcrossingwiggles.Checked  = Properties.Settings.Default.Method_Wiggle;
+
         }
 
         private void ApplySettings() // processes settings changes (after loading or modifying)
@@ -550,6 +558,7 @@ namespace DDMM
 
             Method_Delay   = cb_allowcrossingdelay.Checked;
             Method_CtrlKey = cb_allowcrossingctrlkey.Checked;
+            Method_Wiggles = cb_allowcrossingwiggles.Checked;
 
             UseMouseJump   = cb_mousejump.Checked;
 
@@ -564,6 +573,19 @@ namespace DDMM
                 UnClipDelay = 0;
                 Method_Delay = false; // deactivate method if delay is incorrect
                 tb_unclipdelay.BackColor = tb_color_nok;
+            }
+
+            try
+            { 
+                Wiggle_NeededCount = Convert.ToInt32(tb_numwiggles.Text);
+                tb_numwiggles.BackColor = tb_color_ok;
+            } 
+            catch (Exception) 
+            { 
+                Wiggle_NeededCount = 0;
+                Method_Wiggles = false;
+                tb_numwiggles.BackColor = tb_color_nok;
+                
             }
             
         }
@@ -597,7 +619,9 @@ namespace DDMM
 
             Properties.Settings.Default.Method_CtrlKey  = cb_allowcrossingctrlkey.Checked;
             Properties.Settings.Default.Method_Delay    = cb_allowcrossingdelay.Checked;
+            Properties.Settings.Default.Method_Wiggle    = cb_allowcrossingwiggles.Checked;
             Properties.Settings.Default.Delay_UnClip    = tb_unclipdelay.Text;
+            Properties.Settings.Default.Wiggle_Count    = tb_numwiggles.Text;
             Properties.Settings.Default.UsePreview      = cb_preview.Checked;
 
             Properties.Settings.Default.UseMouseJump    = cb_mousejump.Checked;
@@ -771,9 +795,23 @@ namespace DDMM
 
         private void MouseMoved(int X, int Y) // called by mouse hook to handle mouse movements
         {
+            bool isAtBorder = (CurrentClipRect.Left == X) || (CurrentClipRect.Right == X + 1) || (CurrentClipRect.Top == Y) || (CurrentClipRect.Bottom == Y + 1);
+
+            if (isAtBorder)
+            {
+                int position = ( (CurrentClipRect.Left == X) || (CurrentClipRect.Right == X + 1)) ? Y : X;
+                wiggleCounter.RegisterPosition(position);
+            }
+            else
+            {
+                wiggleCounter.Reset();
+            }
+
+
             // Should modify the following line to happen only on visible form, reducing CPU usage
             if (UsePreview)
-                l_mousepos.Text = "Mouse: x=" + X.ToString() + ", y=" + Y.ToString();
+                l_mousepos.Text = "Mouse: x=" + X + ", y=" + Y + ", wiggles: " + wiggleCounter.Count();
+
 
             if (ActivateProgram) // do something about mouse (clipping or unclipping) only if program is activated
             {
@@ -808,6 +846,14 @@ namespace DDMM
                         UnclipTimer.Start(); // start unclipping timer: we will unclip if timer reaches tick
                     else
                         UnclipTimer.Stop();  // if mouse gets away from border: stop timer
+                }
+
+                if (ActiveClip && Method_Wiggles && wiggleCounter.Count() > Wiggle_NeededCount)
+                {
+                    ClipCursor(ref OrigClipRect); // clip to original zone
+                    ActiveClip = false;           // no active clip
+                    CanClip = false;              // prevent re-clipping for a while
+                    ReclipTimer.Start();
                 }
 
             }
@@ -986,6 +1032,43 @@ namespace DDMM
         private void l_debug_Click(object sender, EventArgs e)
         {
             l_debug.Text = "";
+        }
+    }
+
+    public class WiggleCounter
+    {
+        int _count = 0;
+        int _lastPosition = 0;
+        bool _lastPositionValid = false;
+        bool _isIncreasing = false;
+
+        public void Reset()
+        {
+            _count = 0;
+            _lastPositionValid = false;
+        }
+
+        public void RegisterPosition(int position)
+        {
+            if (!_lastPositionValid)
+            {
+                _lastPositionValid = true;
+            }
+            else if (position != _lastPosition)
+            {
+                bool increased = (position > _lastPosition);
+                if (increased != _isIncreasing)
+                {
+                    _isIncreasing = increased;
+                    _count++;
+                }
+            }
+            _lastPosition = position;
+        }
+
+        public int Count()
+        {
+            return _count;
         }
     }
 
