@@ -55,7 +55,8 @@ namespace DDMM
         private bool Method_CtrlKey;                 // do we use "release cursor on ctrl key" feature
         private int  UnClipDelay;                    // cursor release delay
 
-        private WiggleCounter wiggleCounter = new WiggleCounter();
+        private WiggleCounter wiggleCounterHorz = new WiggleCounter();
+        private WiggleCounter wiggleCounterVert = new WiggleCounter();
         private bool Method_Wiggles;                 // do we use "release cursor on mouse wiggles" feature
         private int Wiggle_NeededCount = 0;
 
@@ -795,22 +796,25 @@ namespace DDMM
 
         private void MouseMoved(int X, int Y) // called by mouse hook to handle mouse movements
         {
-            bool isAtBorder = (CurrentClipRect.Left == X) || (CurrentClipRect.Right == X + 1) || (CurrentClipRect.Top == Y) || (CurrentClipRect.Bottom == Y + 1);
+            int vertBorderDistance = Math.Min(Math.Abs(CurrentClipRect.Left - X), Math.Abs(CurrentClipRect.Right - X - 1));
+            int horzBorderDistance = Math.Min(Math.Abs(CurrentClipRect.Top - Y), Math.Abs(CurrentClipRect.Bottom - Y - 1));
+            int maxBorderDistance = 30;
 
-            if (isAtBorder)
-            {
-                int position = ( (CurrentClipRect.Left == X) || (CurrentClipRect.Right == X + 1)) ? Y : X;
-                wiggleCounter.RegisterPosition(position);
-            }
+            if (vertBorderDistance <= maxBorderDistance)
+                wiggleCounterVert.RegisterPosition(Y);
             else
-            {
-                wiggleCounter.Reset();
-            }
+                wiggleCounterVert.Reset();
 
+            if (horzBorderDistance <= maxBorderDistance)
+                wiggleCounterHorz.RegisterPosition(X);
+            else
+                wiggleCounterHorz.Reset();
+
+            int wiggleCount = Math.Max(wiggleCounterVert.Count(), wiggleCounterHorz.Count());
 
             // Should modify the following line to happen only on visible form, reducing CPU usage
             if (UsePreview)
-                l_mousepos.Text = "Mouse: x=" + X + ", y=" + Y + ", wiggles: " + wiggleCounter.Count();
+                l_mousepos.Text = "Mouse: x=" + X + ", y=" + Y + ", wiggles: " + wiggleCount;
 
 
             if (ActivateProgram) // do something about mouse (clipping or unclipping) only if program is activated
@@ -848,7 +852,7 @@ namespace DDMM
                         UnclipTimer.Stop();  // if mouse gets away from border: stop timer
                 }
 
-                if (ActiveClip && Method_Wiggles && wiggleCounter.Count() > Wiggle_NeededCount)
+                if (ActiveClip && Method_Wiggles && wiggleCount > Wiggle_NeededCount)
                 {
                     ClipCursor(ref OrigClipRect); // clip to original zone
                     ActiveClip = false;           // no active clip
